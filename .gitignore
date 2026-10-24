@@ -1,0 +1,13 @@
+# local-only research log: kept on disk, never committed to the public repo
+RESEARCH.md
+
+# python
+__pycache__/
+*.pyc
+
+# node
+node_modules/
+
+# local scratch
+*.log
+/tmp/

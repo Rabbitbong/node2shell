@@ -1,0 +1,4 @@
+# poc.py itself needs nothing beyond the Python 3 standard library.
+# This is only required for `poc.py --autoprofile` (gadget resolution from a
+# node binary / docker image).
+pwntools>=4.11

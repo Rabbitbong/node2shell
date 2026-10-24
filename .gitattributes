@@ -1,0 +1,4 @@
+# Keep LF line endings in the repo and on checkout (this lab runs on Linux/WSL;
+# CRLF would break the shell scripts).
+* text=auto eol=lf
+*.png binary

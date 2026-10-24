@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbital · bulk data ingestion</title>
+<meta name="description" content="Orbital ingests massive compressed batches, reconciles them, and keeps everything in sync.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;450;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="nav-outer wrap">
+  <nav class="nav">
+    <a class="brand" href="/">
+      <svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="11" stroke="#141413" stroke-width="2.5"/>
+        <circle cx="26" cy="9" r="4" fill="#CF4500"/>
+      </svg>
+      Orbital
+    </a>
+    <div class="nav-links">
+      <a href="#product">Product</a>
+      <a href="#platform">Platform</a>
+      <a href="/dashboard">Console</a>
+      <a href="#docs">Docs</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="/dashboard">Sign in</a>
+      <a class="btn btn-ink" href="/dashboard">Open console</a>
+    </div>
+  </nav>
+</div>
+
+<main>
+  <section class="hero wrap" id="product">
+    <div class="grid">
+      <div>
+        <span class="eyebrow">DATA INGESTION</span>
+        <h1>Bring every record into orbit.</h1>
+        <p class="lead">Orbital ingests massive compressed batches (Brotli, gzip,
+          line-delimited JSON), reconciles them against your canonical datasets,
+          and keeps every downstream system in sync. Millions of records, one POST.</p>
+        <div class="hero-actions">
+          <a class="btn btn-ink" href="/dashboard">Open console &rarr;</a>
+          <a class="btn btn-ghost" href="#docs">Read the docs</a>
+        </div>
+      </div>
+      <div class="frame">
+        <div class="ring"></div>
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+        <span class="tag">ingesting 1.28M records</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="platform" style="padding-top:40px">
+    <div class="stats">
+      <div class="stat"><div class="n">1.28M</div><div class="l">records ingested today</div></div>
+      <div class="stat"><div class="n">50 MB</div><div class="l">max compressed batch</div></div>
+      <div class="stat"><div class="n">br · gzip</div><div class="l">accepted encodings</div></div>
+      <div class="stat"><div class="n">99.98%</div><div class="l">pipeline uptime</div></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">THE PIPELINE</span>
+      <h2>Three moves, from raw bytes to reconciled truth.</h2>
+    </div>
+    <div class="orbits">
+      <div class="orbit-card">
+        <div class="portrait"><div class="satellite">&rarr;</div></div>
+        <span class="eyebrow">INGEST</span>
+        <p>Stream compressed batches straight to the pipeline. We inflate and parse
+          them server-side, with no pre-processing on your end.</p>
+      </div>
+      <div class="orbit-card">
+        <div class="portrait"><div class="satellite">&rarr;</div></div>
+        <span class="eyebrow">RECONCILE</span>
+        <p>Match, dedupe, and validate incoming rows against your canonical
+          datasets before anything is committed.</p>
+      </div>
+      <div class="orbit-card">
+        <div class="portrait"><div class="satellite">&rarr;</div></div>
+        <span class="eyebrow">SYNC</span>
+        <p>Fan out the reconciled result to every downstream system in
+          near-real-time, with full lineage.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="docs">
+    <div class="panel cols">
+      <div>
+        <span class="eyebrow">QUICKSTART</span>
+        <h2 style="margin:16px 0 12px">Post a compressed batch.</h2>
+        <p class="lead">Orbital accepts <code>Content-Encoding: br</code> and
+          <code>gzip</code> transparently. Compress your batch, POST it to the
+          import endpoint, and poll the job.</p>
+        <a class="btn btn-ink" href="/dashboard">Try it in the console &rarr;</a>
+      </div>
+      <div class="code"><span class="k"># compress &amp; upload a batch</span>
+brotli -q 5 batch.json -o batch.json.br
+
+curl -X POST https://api.orbital.example/api/v1/import \
+  -H <span class="k">'Content-Type: application/json'</span> \
+  -H <span class="k">'Content-Encoding: br'</span> \
+  --data-binary @batch.json.br
+
+<span class="k"># =></span> 202 { "jobId": "job_1041", "status": "queued" }</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <h2>We keep your data moving, so you don't have to.</h2>
+    <div class="fgrid">
+      <div>
+        <h4>Product</h4>
+        <a href="#product">Ingestion</a><a href="#platform">Reconciliation</a>
+        <a href="/dashboard">Console</a><a href="#docs">API</a>
+      </div>
+      <div>
+        <h4>Platform</h4>
+        <a href="#">Pipelines</a><a href="#">Datasets</a>
+        <a href="#">Lineage</a><a href="#">Webhooks</a>
+      </div>
+      <div>
+        <h4>Developers</h4>
+        <a href="#docs">Quickstart</a><a href="#">API reference</a>
+        <a href="#">SDKs</a><a href="/healthz">Status</a>
+      </div>
+      <div>
+        <h4>Need help?</h4>
+        <a href="#">Support</a><a href="#">Docs</a>
+        <a href="#">Contact</a><a href="#">Security</a>
+      </div>
+    </div>
+    <div class="fbot">
+      <span>© 2026 Orbital Data, Inc. · <strong>CVE-2026-111497 lab fixture. Not a real service.</strong></span>
+      <span>Privacy · Terms · Status</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbital · import console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;450;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="nav-outer wrap">
+  <nav class="nav">
+    <a class="brand" href="/">
+      <svg class="mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="11" stroke="#141413" stroke-width="2.5"/>
+        <circle cx="26" cy="9" r="4" fill="#CF4500"/>
+      </svg>
+      Orbital
+    </a>
+    <div class="nav-links">
+      <a href="/">Overview</a>
+      <a href="/dashboard">Console</a>
+      <a href="/#docs">Docs</a>
+    </div>
+    <div class="nav-cta"><span class="lab-note">● CVE-2026-111497 lab fixture</span></div>
+  </nav>
+</div>
+
+<main class="wrap" style="padding-top:48px">
+  <span class="eyebrow">IMPORT CONSOLE</span>
+  <h1 style="font-size:44px;margin:16px 0 8px">Bulk import</h1>
+  <p class="lead" style="margin-bottom:32px">POST a batch to <code>/api/v1/import</code>.
+    The endpoint inflates <code>Content-Encoding: br</code>/<code>gzip</code> and
+    accepts up to a 50&nbsp;MB compressed body.</p>
+
+  <div class="cols">
+    <div class="panel">
+      <h3 style="margin-bottom:20px">New import</h3>
+      <label class="field"><span>Dataset</span>
+        <select id="dataset" class="input"></select></label>
+      <label class="field"><span>Batch JSON, e.g. <code>{ "records": [ ... ] }</code></span>
+        <textarea id="batch" class="input">{ "records": [ {"id": 1}, {"id": 2}, {"id": 3} ] }</textarea></label>
+      <button class="btn btn-ink" id="go">Queue import &rarr;</button>
+      <span id="msg" style="margin-left:14px;color:var(--slate);font-size:14px"></span>
+
+      <h3 style="margin:36px 0 16px">Or upload compressed, over the wire</h3>
+      <div class="code"><span class="k"># Brotli-compress the batch, then POST it</span>
+brotli -q 5 batch.json -o batch.json.br
+curl -X POST http://localhost:3000/api/v1/import \
+  -H <span class="k">'Content-Type: application/json'</span> \
+  -H <span class="k">'Content-Encoding: br'</span> \
+  --data-binary @batch.json.br</div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h3 style="margin-bottom:16px">Datasets</h3>
+        <table class="table"><thead><tr><th>Name</th><th>Records</th></tr></thead>
+          <tbody id="datasets"></tbody></table>
+      </div>
+      <div class="panel">
+        <h3 style="margin-bottom:16px">Recent imports</h3>
+        <table class="table"><thead><tr><th>Job</th><th>Records</th><th>Status</th></tr></thead>
+          <tbody id="imports"><tr><td colspan="3" style="color:var(--dust)">No imports yet</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+async function j(url, opts) { const r = await fetch(url, opts); return r.json(); }
+
+async function loadDatasets() {
+  try {
+    const { datasets } = await j('/api/v1/datasets');
+    $('#dataset').innerHTML = datasets.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    $('#datasets').innerHTML = datasets.map(d =>
+      `<tr><td>${d.name}</td><td>${d.records.toLocaleString()}</td></tr>`).join('');
+  } catch (e) {}
+}
+async function loadImports() {
+  try {
+    const { imports } = await j('/api/v1/imports');
+    $('#imports').innerHTML = imports.length ? imports.map(i =>
+      `<tr><td>${i.jobId}</td><td>${i.records}</td><td><span class="chip queued">${i.status}</span></td></tr>`).join('')
+      : '<tr><td colspan="3" style="color:var(--dust)">No imports yet</td></tr>';
+  } catch (e) {}
+}
+$('#go').addEventListener('click', async () => {
+  $('#msg').textContent = 'queuing…';
+  try {
+    const dataset = $('#dataset').value;
+    const batch = JSON.parse($('#batch').value);
+    const job = await j('/api/v1/import', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dataset, ...batch }),
+    });
+    $('#msg').textContent = `queued ${job.jobId} · ${job.records} records`;
+    loadImports();
+  } catch (e) { $('#msg').textContent = 'error: ' + e.message; }
+});
+loadDatasets(); loadImports();
+</script>
+</body>
+</html>

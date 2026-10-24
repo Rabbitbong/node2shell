@@ -1,0 +1,3 @@
+# Only the app/ tree is needed to build the image.
+*
+!app/

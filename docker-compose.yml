@@ -1,0 +1,29 @@
+# A/B lab: vulnerable node 24.22.0 (:3000) vs patched 24.22.1 (:3002).
+# The PoC targets the vuln container; the fixed one should fail closed.
+# The image's in-container supervisor loop restarts the Node worker instantly
+# after each crash (fresh ASLR); `restart: on-failure` is just a backstop.
+services:
+  vuln:
+    build:
+      context: .
+      args:
+        NODE_IMAGE: "node@sha256:925de64a85319052d6971ae81ef2417da956e8a3a2c4a0fac732327970f017f5"
+    platform: linux/amd64
+    environment:
+      PORT: "3000"
+      UV_THREADPOOL_SIZE: "1"
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: on-failure
+
+  fixed:
+    build:
+      context: .
+      args:
+        NODE_IMAGE: "node:24.22.1-bookworm-slim"
+    platform: linux/amd64
+    environment:
+      PORT: "3000"
+    ports:
+      - "127.0.0.1:3002:3000"
+    restart: on-failure
