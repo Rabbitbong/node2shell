@@ -1,5 +1,7 @@
 # node2shell: CVE-2026-111497 PoC lab
 
+![node2shell internals: the request-to-shell pipeline and the probabilistic ASLR loop](docs/internals.svg)
+
 A self-contained lab for **Node2Shell** (CVE-2026-111497): a heap out-of-bounds
 write in the Brotli decoder bundled in Node.js's `zlib`, reachable remotely
 because Express 5 / body-parser 2.x transparently decode `Content-Encoding: br`
@@ -14,6 +16,10 @@ The target is **Orbital**, a fictional bulk-ingestion app. The bug sits where it
 realistically would: a bulk import endpoint accepting large compressed batches
 (`POST /api/v1/import`, 50 MB limit scoped to that one route; other routes keep
 the default 100 KB).
+
+> For deeper technical notes (the gdb-measured memory layout, how the exploit
+> gets around ASLR, and how far `--autoprofile` ports across Node versions), see
+> [`docs/analysis.md`](docs/analysis.md).
 
 > **Authorized lab use only.** This targets a **patched** CVE for reproduction
 > and defense research. `poc.py` is loopback-only by construction
@@ -110,6 +116,7 @@ poc.py            the exploit (probabilistic network RCE, loopback-only)
 build_profile.py  --autoprofile gadget resolver (needs pwntools)
 run.sh            build + run the A/B lab with plain docker
 labcheck.sh       prove the target isn't weakened (user + ASLR check)
+docs/analysis.md  gdb-measured internals, ASLR model, --autoprofile portability
 Dockerfile        vulnerable fixture image (pinned node 24.22.0 x86-64)
 docker-compose.yml  same A/B lab for environments that have compose
 app/              Orbital: the realistic vuln web app + import console

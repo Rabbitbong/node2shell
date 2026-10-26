@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-labelledby="t d">
+  <title id="t">node2shell internals</title>
+  <desc id="d">From a Brotli-encoded request to a shell: the request → decoder → OOB write → ROP → shell pipeline, and the ring-relative ASLR picture — a fixed write at ring+0x137ed748 that lands when the libuv-worker stack's saved return address sits that far above the ring. Addresses gdb-measured on node 24.22.0 x86-64.</desc>
+  <style>
+    .sans{font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:400}
+    .mono{font-family:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:400}
+    .eye{font-size:12px;letter-spacing:1.4px;fill:#7d8187}
+    .ink{fill:#ffffff} .body{fill:#dadbdf} .mute{fill:#7d8187} .sun{fill:#ff7a17} .sunsoft{fill:#ffc285} .breeze{fill:#a0c3ec} .ok{fill:#dadbdf}
+    .card{fill:#191919;stroke:#212327;stroke-width:1}
+  </style>
+
+  <!-- canvas -->
+  <rect x="0.5" y="0.5" width="959" height="619" rx="12" fill="#0a0a0a" stroke="#212327"/>
+
+  <!-- header -->
+  <text class="mono eye" x="48" y="70">CVE-2026-111497  ·  NODE2SHELL</text>
+  <text class="sans ink" x="46" y="124" font-size="44" letter-spacing="-1.2">From Brotli bytes to a shell.</text>
+  <text class="sans mute" x="48" y="158" font-size="15">A crafted br request body walks Node’s bundled Brotli decoder into a 16-byte out-of-bounds write.</text>
+
+  <!-- pipeline -->
+  <g class="mono" font-size="10.5">
+    <rect class="card" x="48"  y="196" width="160" height="104" rx="8"/>
+    <rect class="card" x="224" y="196" width="160" height="104" rx="8"/>
+    <rect class="card" x="400" y="196" width="160" height="104" rx="8"/>
+    <rect class="card" x="576" y="196" width="160" height="104" rx="8"/>
+    <rect class="card" x="752" y="196" width="160" height="104" rx="8"/>
+    <text class="mute" x="64"  y="222" letter-spacing="1.2">01</text>
+    <text class="mute" x="240" y="222" letter-spacing="1.2">02</text>
+    <text class="mute" x="416" y="222" letter-spacing="1.2">03</text>
+    <text class="mute" x="592" y="222" letter-spacing="1.2">04</text>
+    <text class="mute" x="768" y="222" letter-spacing="1.2">05</text>
+  </g>
+  <g class="sans ink" font-size="17" letter-spacing="-0.3">
+    <text x="64"  y="250">Request</text>
+    <text x="240" y="250">Decoder</text>
+    <text x="416" y="250">OOB write</text>
+    <text x="592" y="250">ROP chain</text>
+    <text x="768" y="250">Shell</text>
+  </g>
+  <g class="mono mute" font-size="10.5">
+    <text x="64"  y="272">Content-Encoding: br</text><text x="64"  y="288">→ Express 5 parser</text>
+    <text x="240" y="272">invalid block switch</text><text x="240" y="288">parked, then resumed</text>
+    <text x="416" y="272">movups %xmm0,(ring+pos)</text><text x="416" y="288">16 bytes, signed pos</text>
+    <text x="592" y="272">pivot → dup2(19, 1)</text><text x="592" y="288">→ execvp(/usr/bin/id)</text>
+    <text x="768" y="272">uid=1000(node)</text><text x="768" y="288">on our own socket</text>
+  </g>
+  <!-- static flow connector -->
+  <line x1="128" y1="320" x2="832" y2="320" stroke="#212327"/>
+  <g fill="#363a3f"><circle cx="128" cy="320" r="2.5"/><circle cx="304" cy="320" r="2.5"/><circle cx="480" cy="320" r="2.5"/><circle cx="656" cy="320" r="2.5"/></g>
+  <circle cx="832" cy="320" r="3.5" fill="#ff7a17"/>
+
+  <!-- ASLR panel — ring-relative; addresses gdb-measured, node 24.22.0 x86-64 -->
+  <rect class="card" x="48" y="344" width="420" height="252" rx="8"/>
+  <text class="mono eye" x="72" y="372" font-size="11">ASLR · RING → STACK</text>
+  <text class="mono mute" x="444" y="372" font-size="11" text-anchor="end">hit · attempt 4 of ~8</text>
+
+  <rect x="72" y="382" width="372" height="162" rx="6" fill="#0a0a0a" stroke="#212327"/>
+  <text class="mono mute" x="84" y="399" font-size="9">+ offset from ring ↑   ·   ring &amp; stack both high in mmap space</text>
+
+  <!-- misses: faint, at other offsets -->
+  <rect x="84" y="410" width="348" height="18" rx="4" fill="none" stroke="#2f3338" stroke-dasharray="3 3"/>
+  <text class="mono" x="96" y="422" font-size="9" fill="#5a6066">miss — stack landed elsewhere</text>
+  <rect x="84" y="476" width="348" height="18" rx="4" fill="none" stroke="#2f3338" stroke-dasharray="3 3"/>
+  <text class="mono" x="96" y="488" font-size="9" fill="#5a6066">miss — SIGSEGV → fresh ASLR</text>
+
+  <!-- the hit: saved RIP landed on the write target (ring + 0x137ed748) -->
+  <rect x="84" y="440" width="348" height="24" rx="5" fill="#ff7a17" fill-opacity=".12" stroke="#ff7a17" stroke-width="1.5"/>
+  <text class="mono ink" x="96" y="456" font-size="10.5">saved RIP · libuv-worker stack  ✓ hit</text>
+  <text class="mono sun" x="422" y="456" font-size="9.5" text-anchor="end">ring + 0x137ed748</text>
+
+  <!-- ring = origin -->
+  <rect x="84" y="510" width="348" height="24" rx="5" fill="#ffc285" fill-opacity=".07" stroke="#ffc285" stroke-opacity=".45"/>
+  <text class="mono sunsoft" x="96" y="526" font-size="10.5">Brotli ring · +0 (thread arena)</text>
+  <text class="mono mute" x="420" y="526" font-size="10.5" text-anchor="end">0x70013c004ce0</text>
+
+  <!-- measured footnotes -->
+  <text class="mono mute"   x="72" y="560" font-size="9">16-byte movups at ring+pos · the delta aligns ~1 in 8 worker lives</text>
+  <text class="mono breeze" x="72" y="576" font-size="9">.bss 0x6bdfb00 fixed (non-PIE) → ROP scratch, ASLR-immune</text>
+  <text class="mono mute"   x="72" y="590" font-size="9">sampled worker stack 0x70018cd08000–0x70018d508000</text>
+
+  <!-- terminal — static, resolved -->
+  <rect class="card" x="492" y="344" width="420" height="252" rx="8"/>
+  <line x1="492" y1="376" x2="912" y2="376" stroke="#212327"/>
+  <g fill="#363a3f"><circle cx="512" cy="360" r="4"/><circle cx="526" cy="360" r="4"/><circle cx="540" cy="360" r="4"/></g>
+  <text class="mono mute" x="892" y="364" font-size="11" text-anchor="end" letter-spacing="1.2">POC.PY · 127.0.0.1:3000</text>
+  <g class="mono" font-size="11.5">
+    <text class="ink"  x="512" y="404">$ python3 poc.py --port 3000</text>
+    <text class="mute" x="512" y="426">[*] 23 MB trigger · two-write chunked POST</text>
+    <text class="mute" x="512" y="448">[-] attempt 1  SIGSEGV  → fresh ASLR</text>
+    <text class="mute" x="512" y="470">[-] attempt 2  SIGSEGV  → fresh ASLR</text>
+    <text class="mute" x="512" y="492">[-] attempt 3  SIGSEGV  → fresh ASLR</text>
+    <text class="ink"  x="512" y="514">[+] attempt 4  saved RIP overwritten</text>
+    <text class="sunsoft" x="512" y="536">[+] ROP  dup2(19, 1) → execvp(id)</text>
+    <text class="ink"  x="512" y="566">uid=1000(node) gid=1000(node) groups=1000(node)</text>
+  </g>
+
+</svg>
